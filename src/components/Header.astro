@@ -1,0 +1,176 @@
+---
+// src/components/Header.astro
+import { useTranslations, getLocalePath, languages, type Lang } from "../i18n/ui";
+
+interface Props { lang: Lang; }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const currentPath = Astro.url.pathname;
+---
+
+<header class="header">
+  <div class="container header__inner">
+
+    <!-- Logo -->
+    <a href={getLocalePath("/", lang)} class="header__logo">
+      <span class="header__logo-ar">دعوة</span>
+      <span class="header__logo-divider">·</span>
+      <span class="header__logo-bn">দাওয়াহ</span>
+    </a>
+
+    <!-- Nav links -->
+    <nav class="nav" aria-label="Main navigation">
+      <ul class="nav__links">
+        <li><a href={getLocalePath("/", lang)} class="nav__link">{t("nav.home")}</a></li>
+        <li><a href={getLocalePath("/articles", lang)} class="nav__link">{t("nav.articles")}</a></li>
+        <li><a href={getLocalePath("/about", lang)} class="nav__link">{t("nav.about")}</a></li>
+        <li><a href={getLocalePath("/contact", lang)} class="nav__link">{t("nav.contact")}</a></li>
+      </ul>
+    </nav>
+
+    <!-- Language switcher -->
+    <div class="lang-switcher" role="navigation" aria-label="Language switcher">
+      {Object.entries(languages).map(([code, label]) => (
+        <a
+          href={code === "en" ? currentPath.replace(/^\/(bn|ar)/, "") : currentPath.replace(/^\/(bn|ar)\//, "/").replace(/^\/(?!bn|ar)/, `/${code}/`)}
+          class:list={["lang-btn", { "lang-btn--active": lang === code }]}
+          lang={code}
+          hreflang={code}
+        >
+          {label}
+        </a>
+      ))}
+    </div>
+
+    <!-- Mobile menu toggle -->
+    <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+
+  </div>
+</header>
+
+<style>
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--green-800);
+    border-bottom: 1px solid rgba(201, 164, 101, 0.2);
+    backdrop-filter: blur(8px);
+  }
+
+  .header__inner {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    height: 68px;
+  }
+
+  /* Logo */
+  .header__logo {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .header__logo-ar {
+    font-family: var(--font-ar);
+    font-size: 1.5rem;
+    color: var(--gold-400);
+    line-height: 1;
+  }
+  .header__logo-divider {
+    color: rgba(201,164,101,0.4);
+    font-size: 1.2rem;
+  }
+  .header__logo-bn {
+    font-family: var(--font-bn);
+    font-size: 1.1rem;
+    color: var(--gold-100);
+    font-weight: 600;
+  }
+
+  /* Nav */
+  .nav { margin-inline-start: auto; }
+  .nav__links {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .nav__link {
+    padding: 0.4rem 0.85rem;
+    border-radius: var(--radius-sm);
+    color: rgba(253,250,244,0.8);
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    transition: color var(--duration) var(--ease), background var(--duration) var(--ease);
+  }
+  .nav__link:hover {
+    color: var(--gold-400);
+    background: rgba(201,164,101,0.08);
+  }
+
+  /* Language switcher */
+  .lang-switcher {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: rgba(0,0,0,0.2);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+    border: 1px solid rgba(201,164,101,0.15);
+  }
+  .lang-btn {
+    padding: 0.25rem 0.6rem;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(253,250,244,0.6);
+    transition: all var(--duration) var(--ease);
+    white-space: nowrap;
+  }
+  .lang-btn:hover { color: var(--gold-400); }
+  .lang-btn--active {
+    background: var(--gold-500);
+    color: var(--green-900);
+  }
+
+  /* Mobile toggle */
+  .menu-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    padding: 4px;
+    margin-inline-start: auto;
+  }
+  .menu-toggle span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--gold-400);
+    border-radius: 2px;
+    transition: all var(--duration) var(--ease);
+  }
+
+  @media (max-width: 768px) {
+    .nav { display: none; }
+    .menu-toggle { display: flex; }
+
+    .header__inner { gap: 1rem; }
+    .lang-switcher { margin-inline-start: auto; }
+  }
+</style>
+
+<script>
+  const toggle = document.querySelector(".menu-toggle") as HTMLButtonElement;
+  const nav    = document.querySelector(".nav") as HTMLElement;
+
+  toggle?.addEventListener("click", () => {
+    const open = toggle.getAttribute("aria-expanded") === "true";
+    toggle.setAttribute("aria-expanded", String(!open));
+    nav.style.display = open ? "none" : "block";
+  });
+</script>

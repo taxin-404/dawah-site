@@ -1,0 +1,418 @@
+---
+// src/pages/admin/index.astro
+// Protected admin panel – add Firebase Auth check here in production
+export const prerender = false;
+---
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin – Dawah Site</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Amiri:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green-800: #0d2b1a; --green-600: #2d6e47; --green-100: #ddf0e5;
+      --gold-500: #c9a465; --gold-100: #f5e9c8;
+      --cream: #fdfaf4; --text-700: #2e2718; --text-300: #9c8e72;
+      --radius: 8px; --font: 'Hind Siliguri', sans-serif;
+    }
+    body { font-family: var(--font); background: #f4f4f4; color: var(--text-700); min-height: 100vh; }
+
+    /* Header */
+    .admin-header {
+      background: var(--green-800);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .admin-header h1 { font-family: 'Amiri', serif; color: var(--gold-500); font-size: 1.6rem; }
+    .admin-header span { color: rgba(255,255,255,0.5); font-size: 0.85rem; }
+
+    /* Layout */
+    .admin-layout { display: grid; grid-template-columns: 1fr 380px; gap: 2rem; max-width: 1300px; margin: 0 auto; padding: 2rem; }
+
+    /* Form card */
+    .card { background: #fff; border-radius: var(--radius); padding: 2rem; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .card h2 { font-size: 1.1rem; color: var(--green-600); margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid #eee; }
+
+    /* Form elements */
+    .field { margin-bottom: 1.25rem; }
+    label { display: block; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-300); margin-bottom: 0.35rem; }
+    input, textarea, select {
+      width: 100%;
+      padding: 0.65rem 0.9rem;
+      border: 1.5px solid #e0ddd6;
+      border-radius: 6px;
+      font: inherit;
+      font-size: 0.95rem;
+      color: var(--text-700);
+      background: var(--cream);
+      transition: border-color 200ms;
+    }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--green-600); }
+    textarea { resize: vertical; min-height: 140px; line-height: 1.6; }
+
+    /* Language tabs */
+    .lang-tabs { display: flex; gap: 4px; margin-bottom: 1rem; }
+    .lang-tab {
+      padding: 0.3rem 0.9rem;
+      border: 1.5px solid #e0ddd6;
+      border-radius: 6px;
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--cream);
+      color: var(--text-300);
+      transition: all 200ms;
+    }
+    .lang-tab.active { background: var(--green-800); border-color: var(--green-800); color: #fff; }
+    .lang-panel { display: none; }
+    .lang-panel.active { display: block; }
+    .lang-panel[data-lang="ar"] input,
+    .lang-panel[data-lang="ar"] textarea { direction: rtl; font-family: 'Amiri', serif; font-size: 1rem; }
+
+    /* Image upload */
+    .img-upload-area {
+      border: 2px dashed #e0ddd6;
+      border-radius: var(--radius);
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 200ms;
+    }
+    .img-upload-area:hover { border-color: var(--green-600); }
+    .img-upload-area input { display: none; }
+    .img-preview { max-width: 100%; border-radius: 6px; margin-top: 1rem; display: none; }
+    .img-url { word-break: break-all; font-size: 0.78rem; color: var(--text-300); margin-top: 0.5rem; }
+
+    /* Buttons */
+    .btn-publish {
+      width: 100%;
+      padding: 0.9rem;
+      background: var(--green-800);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 200ms;
+      margin-top: 0.5rem;
+    }
+    .btn-publish:hover { background: #1a4a30; }
+    .btn-publish:disabled { background: #999; cursor: not-allowed; }
+
+    /* Status */
+    #status {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    #status.success { background: var(--green-100); color: #0d3a1e; }
+    #status.error   { background: #fde8e8; color: #7a1212; }
+
+    /* Articles list */
+    .article-item {
+      padding: 0.75rem;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .article-item:last-child { border-bottom: none; }
+    .article-item__title { font-weight: 500; font-size: 0.9rem; flex: 1; }
+    .article-item__date { font-size: 0.75rem; color: var(--text-300); }
+    .btn-del {
+      background: none;
+      border: 1.5px solid #fca5a5;
+      color: #dc2626;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+    .no-articles { padding: 2rem; text-align: center; color: var(--text-300); }
+  </style>
+</head>
+<body>
+
+<div class="admin-header">
+  <h1>دعوة Admin</h1>
+  <span>Article Manager</span>
+</div>
+
+<div class="admin-layout">
+
+  <!-- ── Write Article ───────────────────────────────────────── -->
+  <div>
+    <div class="card">
+      <h2>✍️ Write New Article</h2>
+
+      <!-- Language tabs -->
+      <div class="lang-tabs">
+        <button class="lang-tab active" data-tab="en">🇬🇧 English</button>
+        <button class="lang-tab"        data-tab="bn">🇧🇩 বাংলা</button>
+        <button class="lang-tab"        data-tab="ar">🇸🇦 العربية</button>
+      </div>
+
+      <!-- English panel -->
+      <div class="lang-panel active" data-lang="en">
+        <div class="field">
+          <label>Title (English)</label>
+          <input type="text" id="title_en" placeholder="Article title in English" />
+        </div>
+        <div class="field">
+          <label>Excerpt (English)</label>
+          <textarea id="excerpt_en" rows="2" placeholder="Short summary..."></textarea>
+        </div>
+        <div class="field">
+          <label>Content (English) — HTML supported</label>
+          <textarea id="content_en" rows="10" placeholder="&lt;p&gt;Your article content...&lt;/p&gt;"></textarea>
+        </div>
+      </div>
+
+      <!-- Bengali panel -->
+      <div class="lang-panel" data-lang="bn">
+        <div class="field">
+          <label>শিরোনাম (বাংলা)</label>
+          <input type="text" id="title_bn" placeholder="বাংলায় শিরোনাম লিখুন" />
+        </div>
+        <div class="field">
+          <label>সারসংক্ষেপ (বাংলা)</label>
+          <textarea id="excerpt_bn" rows="2" placeholder="সংক্ষিপ্ত বিবরণ..."></textarea>
+        </div>
+        <div class="field">
+          <label>বিষয়বস্তু (বাংলা) — HTML supported</label>
+          <textarea id="content_bn" rows="10" placeholder="&lt;p&gt;আপনার প্রবন্ধের বিষয়বস্তু...&lt;/p&gt;"></textarea>
+        </div>
+      </div>
+
+      <!-- Arabic panel -->
+      <div class="lang-panel" data-lang="ar">
+        <div class="field">
+          <label>العنوان (عربي)</label>
+          <input type="text" id="title_ar" placeholder="اكتب العنوان بالعربية" dir="rtl" />
+        </div>
+        <div class="field">
+          <label>المقتطف (عربي)</label>
+          <textarea id="excerpt_ar" rows="2" placeholder="ملخص قصير..." dir="rtl"></textarea>
+        </div>
+        <div class="field">
+          <label>المحتوى (عربي) — HTML supported</label>
+          <textarea id="content_ar" rows="10" placeholder="&lt;p&gt;محتوى المقالة...&lt;/p&gt;" dir="rtl"></textarea>
+        </div>
+      </div>
+
+      <!-- Slug + Author + Tags -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="field">
+          <label>Slug (URL)</label>
+          <input type="text" id="slug" placeholder="my-article-slug" />
+        </div>
+        <div class="field">
+          <label>Author</label>
+          <input type="text" id="author" placeholder="Sheikh / Author name" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Tags (comma separated)</label>
+        <input type="text" id="tags" placeholder="Aqeedah, Quran, Sunnah" />
+      </div>
+      <div class="field">
+        <label>Featured article?</label>
+        <select id="featured">
+          <option value="false">No</option>
+          <option value="true">Yes – show in highlights</option>
+        </select>
+      </div>
+
+      <button class="btn-publish" id="publishBtn">🚀 Publish Article</button>
+      <div id="status"></div>
+    </div>
+  </div>
+
+  <!-- ── Sidebar ─────────────────────────────────────────────── -->
+  <div style="display:flex;flex-direction:column;gap:1.5rem">
+
+    <!-- Image upload -->
+    <div class="card">
+      <h2>🖼️ Upload Image (ImgBB)</h2>
+      <div class="img-upload-area" id="uploadArea">
+        <input type="file" id="imgInput" accept="image/*" />
+        <p style="color:#9c8e72;font-size:0.9rem">Click to upload image<br><small>Free hosting via ImgBB</small></p>
+        <img id="imgPreview" class="img-preview" alt="Preview" />
+        <p class="img-url" id="imgUrl"></p>
+      </div>
+      <p id="uploadStatus" style="font-size:0.8rem;color:#9c8e72;margin-top:0.5rem;text-align:center"></p>
+    </div>
+
+    <!-- Published articles -->
+    <div class="card">
+      <h2>📋 Published Articles</h2>
+      <div id="articlesList"><p class="no-articles">Loading...</p></div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp, orderBy, query, limit }
+    from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  // ── Firebase init ─────────────────────────────────────────────────────
+  const firebaseConfig = {
+    apiKey:            "__PUBLIC_FIREBASE_API_KEY__",
+    authDomain:        "__PUBLIC_FIREBASE_AUTH_DOMAIN__",
+    projectId:         "__PUBLIC_FIREBASE_PROJECT_ID__",
+    storageBucket:     "__PUBLIC_FIREBASE_STORAGE_BUCKET__",
+    messagingSenderId: "__PUBLIC_FIREBASE_MESSAGING_SENDER_ID__",
+    appId:             "__PUBLIC_FIREBASE_APP_ID__",
+  };
+  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  const IMGBB_KEY = "__PUBLIC_IMGBB_API_KEY__";
+
+  // ── Language tabs ─────────────────────────────────────────────────────
+  document.querySelectorAll(".lang-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".lang-tab, .lang-panel").forEach(el => el.classList.remove("active"));
+      btn.classList.add("active");
+      document.querySelector(`.lang-panel[data-lang="${btn.dataset.tab}"]`)?.classList.add("active");
+    });
+  });
+
+  // ── ImgBB upload ──────────────────────────────────────────────────────
+  let uploadedImageUrl = "";
+  const uploadArea = document.getElementById("uploadArea");
+  const imgInput   = document.getElementById("imgInput");
+  const imgPreview = document.getElementById("imgPreview");
+  const imgUrlEl   = document.getElementById("imgUrl");
+  const uploadStatus = document.getElementById("uploadStatus");
+
+  uploadArea.addEventListener("click", () => imgInput.click());
+  imgInput.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    uploadStatus.textContent = "⏳ Uploading to ImgBB...";
+
+    const form = new FormData();
+    form.append("image", file);
+    form.append("key", IMGBB_KEY);
+
+    try {
+      const res  = await fetch("https://api.imgbb.com/1/upload", { method: "POST", body: form });
+      const json = await res.json();
+      if (!json.success) throw new Error("Upload failed");
+
+      uploadedImageUrl      = json.data.url;
+      imgPreview.src        = uploadedImageUrl;
+      imgPreview.style.display = "block";
+      imgUrlEl.textContent  = uploadedImageUrl;
+      uploadStatus.textContent = "✅ Image uploaded!";
+    } catch (err) {
+      uploadStatus.textContent = "❌ Upload failed. Check API key.";
+    }
+  });
+
+  // ── Publish article ───────────────────────────────────────────────────
+  const publishBtn = document.getElementById("publishBtn");
+  const status     = document.getElementById("status");
+
+  publishBtn.addEventListener("click", async () => {
+    const slug = document.getElementById("slug").value.trim().replace(/\s+/g, "-").toLowerCase();
+    if (!slug) return showStatus("error", "Slug is required!");
+    if (!document.getElementById("title_en").value.trim()) return showStatus("error", "English title is required!");
+
+    publishBtn.disabled = true;
+    publishBtn.textContent = "Publishing...";
+
+    try {
+      await addDoc(collection(db, "articles"), {
+        slug,
+        title:    { en: v("title_en"),   bn: v("title_bn"),   ar: v("title_ar")   },
+        excerpt:  { en: v("excerpt_en"), bn: v("excerpt_bn"), ar: v("excerpt_ar") },
+        content:  { en: v("content_en"), bn: v("content_bn"), ar: v("content_ar") },
+        author:   v("author") || "Admin",
+        tags:     v("tags").split(",").map(s => s.trim()).filter(Boolean),
+        featured: v("featured") === "true",
+        imageUrl: uploadedImageUrl,
+        published: true,
+        publishedAt: serverTimestamp(),
+      });
+      showStatus("success", "✅ Article published successfully!");
+      loadArticles();
+      // Reset form
+      ["title_en","title_bn","title_ar","excerpt_en","excerpt_bn","excerpt_ar",
+       "content_en","content_bn","content_ar","slug","author","tags"].forEach(id => {
+        document.getElementById(id).value = "";
+      });
+      uploadedImageUrl = "";
+      imgPreview.style.display = "none";
+      imgUrlEl.textContent = "";
+    } catch (err) {
+      showStatus("error", "❌ Error: " + err.message);
+    } finally {
+      publishBtn.disabled = false;
+      publishBtn.textContent = "🚀 Publish Article";
+    }
+  });
+
+  function v(id) { return document.getElementById(id)?.value?.trim() ?? ""; }
+
+  function showStatus(type, msg) {
+    status.textContent    = msg;
+    status.className      = type;
+    status.style.display  = "block";
+    setTimeout(() => { status.style.display = "none"; }, 5000);
+  }
+
+  // ── Load articles list ────────────────────────────────────────────────
+  async function loadArticles() {
+    const list = document.getElementById("articlesList");
+    try {
+      const q    = query(collection(db, "articles"), orderBy("publishedAt", "desc"), limit(20));
+      const snap = await getDocs(q);
+      if (snap.empty) { list.innerHTML = '<p class="no-articles">No articles yet.</p>'; return; }
+
+      list.innerHTML = snap.docs.map(d => {
+        const data = d.data();
+        const date = data.publishedAt?.toDate?.()?.toLocaleDateString() ?? "–";
+        return `
+          <div class="article-item">
+            <div>
+              <div class="article-item__title">${data.title?.en ?? "Untitled"}</div>
+              <div class="article-item__date">${date}</div>
+            </div>
+            <button class="btn-del" data-id="${d.id}">Delete</button>
+          </div>`;
+      }).join("");
+
+      list.querySelectorAll(".btn-del").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("Delete this article?")) return;
+          await deleteDoc(doc(db, "articles", btn.dataset.id));
+          loadArticles();
+        });
+      });
+    } catch (e) {
+      list.innerHTML = `<p class="no-articles">Error: ${e.message}</p>`;
+    }
+  }
+
+  loadArticles();
+</script>
+
+</body>
+</html>

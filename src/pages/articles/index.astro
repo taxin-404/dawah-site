@@ -1,0 +1,134 @@
+---
+// src/pages/articles/index.astro
+export const prerender = false;
+
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import ArticleCard from "../../components/ArticleCard.astro";
+import { getLangFromUrl, useTranslations } from "../../i18n/ui";
+import { getArticles } from "../../lib/firebase";
+import type { Article } from "../../lib/firebase";
+
+const lang = getLangFromUrl(Astro.url);
+const t    = useTranslations(lang);
+
+const tag = Astro.url.searchParams.get("tag") ?? "";
+
+let articles: Article[] = [];
+try {
+  articles = await getArticles(50);
+  if (tag) articles = articles.filter((a) => a.tags?.includes(tag));
+} catch (e) {
+  console.error(e);
+}
+
+// Collect all unique tags from articles
+const allTags = [...new Set(articles.flatMap((a) => a.tags ?? []))].sort();
+---
+
+<BaseLayout title={`${t("nav.articles")} — Dawah`}>
+  <div class="articles-page">
+
+    <!-- Page header -->
+    <div class="articles-page__header pattern-bg">
+      <div class="articles-page__overlay"></div>
+      <div class="container articles-page__header-inner">
+        <p class="articles-page__bismillah" lang="ar">المقالات</p>
+        <h1 class="articles-page__title">{t("section.latest")}</h1>
+      </div>
+    </div>
+
+    <div class="container articles-page__body">
+
+      <!-- Tag filter -->
+      {allTags.length > 0 && (
+        <div class="tag-filter">
+          <a href="?" class:list={["tag-btn", { "tag-btn--active": !tag }]}>All</a>
+          {allTags.map((t) => (
+            <a
+              href={`?tag=${encodeURIComponent(t)}`}
+              class:list={["tag-btn", { "tag-btn--active": tag === t }]}
+            >
+              {t}
+            </a>
+          ))}
+        </div>
+      )}
+
+      <!-- Grid -->
+      {articles.length === 0 ? (
+        <p class="no-results">No articles found. Check back soon!</p>
+      ) : (
+        <div class="grid-articles">
+          {articles.map((article) => (
+            <ArticleCard article={article} lang={lang} />
+          ))}
+        </div>
+      )}
+
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  /* Page header */
+  .articles-page__header {
+    position: relative;
+    padding-block: 4rem 3rem;
+    text-align: center;
+  }
+  .articles-page__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,31,18,0.88);
+  }
+  .articles-page__header-inner {
+    position: relative;
+    z-index: 1;
+  }
+  .articles-page__bismillah {
+    font-family: var(--font-ar);
+    font-size: 2.5rem;
+    color: var(--gold-400);
+    line-height: 1.4;
+  }
+  .articles-page__title {
+    font-family: var(--font-en);
+    font-size: clamp(1.4rem, 3vw, 2.2rem);
+    font-weight: 400;
+    color: rgba(253,250,244,0.8);
+    margin-top: 0.25rem;
+  }
+
+  /* Body */
+  .articles-page__body { padding-block: 3rem; }
+
+  /* Tag filter */
+  .tag-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+  .tag-btn {
+    padding: 0.3rem 0.9rem;
+    border: 1.5px solid var(--cream-3);
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-500);
+    transition: all var(--duration) var(--ease);
+  }
+  .tag-btn:hover { border-color: var(--green-500); color: var(--green-600); }
+  .tag-btn--active {
+    background: var(--green-700);
+    border-color: var(--green-700);
+    color: #fff;
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 4rem;
+    color: var(--text-300);
+    font-size: 1.1rem;
+  }
+</style>

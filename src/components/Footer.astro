@@ -1,0 +1,144 @@
+---
+// src/components/Footer.astro
+import { useTranslations, getLocalePath, languages, type Lang } from "../i18n/ui";
+
+interface Props { lang: Lang; }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const year = new Date().getFullYear();
+---
+
+<footer class="footer pattern-bg">
+  <div class="footer__overlay"></div>
+  <div class="container footer__inner">
+
+    <!-- Brand -->
+    <div class="footer__brand">
+      <p class="footer__logo-ar">دعوة</p>
+      <p class="footer__logo-bn">দাওয়াহ</p>
+      <p class="footer__tagline">{t("footer.tagline")}</p>
+    </div>
+
+    <!-- Links -->
+    <nav class="footer__nav" aria-label="Footer navigation">
+      <ul>
+        <li><a href={getLocalePath("/", lang)}>Home</a></li>
+        <li><a href={getLocalePath("/articles", lang)}>Articles</a></li>
+        <li><a href={getLocalePath("/about", lang)}>About</a></li>
+        <li><a href={getLocalePath("/contact", lang)}>Contact</a></li>
+      </ul>
+    </nav>
+
+    <!-- Languages -->
+    <div class="footer__langs">
+      {Object.entries(languages).map(([code, label]) => (
+        <a href={code === "en" ? "/" : `/${code}/`} lang={code}>{label}</a>
+      ))}
+    </div>
+
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="footer__bottom">
+    <div class="container footer__bottom-inner">
+      <span>© {year} Dawah Site. {t("footer.rights")}</span>
+      <span class="footer__ayah" lang="ar">وَادْعُ إِلَىٰ سَبِيلِ رَبِّكَ</span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    position: relative;
+    margin-top: auto;
+    padding-top: 4rem;
+  }
+  .footer__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,31,18,0.93);
+    pointer-events: none;
+  }
+  .footer__inner {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 3rem;
+    padding-bottom: 3rem;
+  }
+
+  /* Brand */
+  .footer__logo-ar {
+    font-family: var(--font-ar);
+    font-size: 2.5rem;
+    color: var(--gold-400);
+    line-height: 1;
+  }
+  .footer__logo-bn {
+    font-family: var(--font-bn);
+    font-size: 1.3rem;
+    color: var(--gold-100);
+    font-weight: 600;
+    margin-top: 0.25rem;
+  }
+  .footer__tagline {
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+    color: rgba(253,250,244,0.55);
+    max-width: 240px;
+    line-height: 1.6;
+  }
+
+  /* Nav */
+  .footer__nav ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .footer__nav a {
+    font-size: 0.9rem;
+    color: rgba(253,250,244,0.65);
+    transition: color var(--duration) var(--ease);
+  }
+  .footer__nav a:hover { color: var(--gold-400); }
+
+  /* Languages */
+  .footer__langs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .footer__langs a {
+    font-size: 0.9rem;
+    color: rgba(253,250,244,0.65);
+    transition: color var(--duration) var(--ease);
+  }
+  .footer__langs a:hover { color: var(--gold-400); }
+
+  /* Bottom bar */
+  .footer__bottom {
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid rgba(201,164,101,0.15);
+    padding-block: 1rem;
+  }
+  .footer__bottom-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: rgba(253,250,244,0.35);
+  }
+  .footer__ayah {
+    font-family: var(--font-ar);
+    font-size: 1rem;
+    color: rgba(201,164,101,0.4);
+  }
+
+  @media (max-width: 768px) {
+    .footer__inner { grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .footer__brand { grid-column: 1 / -1; }
+    .footer__bottom-inner { flex-direction: column; gap: 0.5rem; text-align: center; }
+  }
+</style>

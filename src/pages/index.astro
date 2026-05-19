@@ -1,0 +1,125 @@
+---
+// src/pages/index.astro
+export const prerender = false; // SSR via Cloudflare
+
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Hero from "../components/Hero.astro";
+import ArticleCard from "../components/ArticleCard.astro";
+import { getLangFromUrl, useTranslations } from "../i18n/ui";
+import { getArticles } from "../lib/firebase";
+import type { Article } from "../lib/firebase";
+
+const lang = getLangFromUrl(Astro.url);
+const t    = useTranslations(lang);
+
+let articles: Article[] = [];
+try {
+  articles = await getArticles(9);
+} catch (e) {
+  console.error("Failed to fetch articles:", e);
+}
+---
+
+<BaseLayout title="دعوة | Dawah | দাওয়াহ">
+
+  <!-- ── Hero ──────────────────────────────────────────────────── -->
+  <Hero lang={lang} />
+
+  <!-- ── Articles Section ─────────────────────────────────────── -->
+  <section class="section articles-section">
+    <div class="container">
+
+      <div class="articles-section__header">
+        <h2 class="section-heading">{t("section.latest")}</h2>
+        <a href={lang === "en" ? "/articles" : `/${lang}/articles`} class="btn btn-outline">
+          {t("section.viewall")}
+        </a>
+      </div>
+
+      {articles.length === 0 ? (
+        <div class="empty-state">
+          <p class="empty-state__icon">📖</p>
+          <p class="empty-state__msg">No articles published yet. Check back soon!</p>
+        </div>
+      ) : (
+        <div class="grid-articles">
+          {articles.map((article) => (
+            <ArticleCard article={article} lang={lang} />
+          ))}
+        </div>
+      )}
+
+    </div>
+  </section>
+
+  <!-- ── Call to Islam Banner ──────────────────────────────────── -->
+  <section class="cta-banner pattern-bg-light">
+    <div class="container cta-banner__inner">
+      <div class="cta-banner__ayah">
+        <p class="cta-banner__arabic" lang="ar">
+          ادْعُ إِلَىٰ سَبِيلِ رَبِّكَ بِالْحِكْمَةِ وَالْمَوْعِظَةِ الْحَسَنَةِ
+        </p>
+        <p class="cta-banner__ref">— Surah An-Nahl 16:125</p>
+      </div>
+      <p class="cta-banner__translation" lang="en">
+        "Invite to the way of your Lord with wisdom and good instruction."
+      </p>
+    </div>
+  </section>
+
+</BaseLayout>
+
+<style>
+  /* Articles section */
+  .articles-section { background: var(--cream); }
+  .articles-section__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-lg);
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .articles-section__header .section-heading { margin-bottom: 0; }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 1rem;
+    color: var(--text-300);
+  }
+  .empty-state__icon { font-size: 3rem; margin-bottom: 1rem; }
+  .empty-state__msg { font-size: 1.1rem; }
+
+  /* CTA Banner */
+  .cta-banner {
+    padding-block: 4rem;
+  }
+  .cta-banner__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+  }
+  .cta-banner__arabic {
+    font-family: var(--font-ar);
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    color: var(--green-700);
+    line-height: 1.8;
+  }
+  .cta-banner__ref {
+    font-size: 0.8rem;
+    color: var(--gold-700);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    margin-top: -0.5rem;
+  }
+  .cta-banner__translation {
+    font-family: var(--font-en);
+    font-style: italic;
+    font-size: 1.15rem;
+    color: var(--text-500);
+    max-width: 560px;
+  }
+</style>

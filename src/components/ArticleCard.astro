@@ -1,0 +1,81 @@
+---
+// src/components/ArticleCard.astro
+import { useTranslations, getLocalePath, type Lang } from "../i18n/ui";
+import type { Article } from "../lib/firebase";
+
+interface Props {
+  article: Article;
+  lang: Lang;
+}
+const { article, lang } = Astro.props;
+const t = useTranslations(lang);
+
+const title   = article.title?.[lang]   || article.title?.en   || "Untitled";
+const excerpt  = article.excerpt?.[lang]  || article.excerpt?.en  || "";
+const tag      = article.tags?.[0] ?? "Dawah";
+
+function formatDate(date: Date | any): string {
+  const d = date?.toDate ? date.toDate() : new Date(date);
+  return d.toLocaleDateString(
+    lang === "ar" ? "ar-SA" : lang === "bn" ? "bn-BD" : "en-GB",
+    { year: "numeric", month: "short", day: "numeric" }
+  );
+}
+---
+
+<article class="article-card">
+  <a href={getLocalePath(`/articles/${article.slug}`, lang)} class="article-card__image-link" tabindex="-1" aria-hidden="true">
+    {article.imageUrl
+      ? <img src={article.imageUrl} alt={title} class="article-card__image" loading="lazy" decoding="async" />
+      : <div class="article-card__image-placeholder">﷽</div>
+    }
+    {article.featured && <span class="article-card__badge">★</span>}
+  </a>
+
+  <div class="article-card__body">
+    {tag && <span class="article-card__tag">{tag}</span>}
+
+    <h2 class="article-card__title" lang={lang}>
+      <a href={getLocalePath(`/articles/${article.slug}`, lang)}>
+        {title}
+      </a>
+    </h2>
+
+    {excerpt && (
+      <p class="article-card__excerpt" lang={lang}>
+        {excerpt.length > 120 ? excerpt.slice(0, 120) + "…" : excerpt}
+      </p>
+    )}
+
+    <div class="article-card__meta">
+      <span>{formatDate(article.publishedAt)}</span>
+      <a href={getLocalePath(`/articles/${article.slug}`, lang)} class="article-card__readmore">
+        {t("section.readmore")} →
+      </a>
+    </div>
+  </div>
+</article>
+
+<style>
+  .article-card__image-link { position: relative; display: block; }
+
+  .article-card__badge {
+    position: absolute;
+    top: 10px;
+    inset-inline-start: 10px;
+    background: var(--gold-500);
+    color: var(--green-900);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .article-card__title a {
+    color: var(--text-700);
+    transition: color var(--duration) var(--ease);
+  }
+  .article-card__title a:hover { color: var(--green-600); }
+</style>

@@ -1,0 +1,10 @@
+name = "dawah-site"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "dist"
+
+# Environment variables are set in Cloudflare Dashboard:
+# Pages → Your Project → Settings → Environment Variables
+# Add all PUBLIC_FIREBASE_* and PUBLIC_IMGBB_API_KEY there
+
+[vars]
+PUBLIC_SITE_URL = "https://dawah-site.pages.dev"

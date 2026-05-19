@@ -1,0 +1,65 @@
+---
+// src/layouts/BaseLayout.astro
+import { getLangFromUrl, langDir } from "../i18n/ui";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+}
+
+const lang = getLangFromUrl(Astro.url);
+const dir  = langDir[lang];
+
+const {
+  title = "دَعوة | Dawah | দাওয়াহ",
+  description = "Sharing the message of Islam in English, Bengali, and Arabic.",
+  image = "/og-image.png",
+} = Astro.props;
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL ?? "";
+---
+
+<!doctype html>
+<html lang={lang} dir={dir}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#0d2b1a" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={`${siteUrl}${image}`} />
+    <meta property="og:type" content="website" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Canonical -->
+    <link rel="canonical" href={`${siteUrl}${Astro.url.pathname}`} />
+
+    <!-- Hreflang (SEO for multilingual) -->
+    <link rel="alternate" hreflang="en" href={`${siteUrl}/`} />
+    <link rel="alternate" hreflang="bn" href={`${siteUrl}/bn/`} />
+    <link rel="alternate" hreflang="ar" href={`${siteUrl}/ar/`} />
+
+    <title>{title}</title>
+  </head>
+  <body>
+    <Header lang={lang} />
+    <main>
+      <slot />
+    </main>
+    <Footer lang={lang} />
+  </body>
+</html>
