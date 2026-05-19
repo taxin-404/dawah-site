@@ -63,19 +63,58 @@ npm install
 1. Go to [console.firebase.google.com](https://console.firebase.google.com)
 2. Create a new project → **Add Web App**
 3. Copy the config values
-4. Go to **Firestore Database** → Create database → Start in production mode
-5. Add this Firestore rule (Security Rules tab):
-```
+4. Go to **Firestore Database** → Create database → Start in **production mode**
+5. Go to the **Rules** tab and replace everything with:
+
+```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /articles/{doc} {
+
+    // ── Articles ─────────────────────────────────────────────────────
+    match /articles/{articleId} {
+
+      // Anyone can READ a published article (your website visitors)
       allow read: if resource.data.published == true;
-      allow write: if request.auth != null; // only logged-in admin
+
+      // Only a logged-in + email-verified admin can write
+      allow create: if request.auth != null
+                    && request.auth.token.email_verified == true
+                    && isValidArticle(request.resource.data);
+
+      allow update: if request.auth != null
+                    && request.auth.token.email_verified == true;
+
+      allow delete: if request.auth != null
+                    && request.auth.token.email_verified == true;
     }
+  }
+
+  // ── Validate required fields on create ───────────────────────────
+  function isValidArticle(data) {
+    return data.keys().hasAll(['slug', 'title', 'published', 'publishedAt'])
+      && data.slug is string
+      && data.slug.size() > 0
+      && data.slug.size() < 200
+      && data.title is map
+      && data.published is bool;
   }
 }
 ```
+
+6. Click **Publish**
+
+### 🔒 What these rules do
+
+| Rule | Who | Why |
+|---|---|---|
+| `allow read` if `published == true` | Everyone | Visitors see published articles, drafts stay hidden |
+| `allow create/update/delete` | Logged-in + email verified only | Only your admin account can write to the DB |
+| `isValidArticle()` validator | On create only | Blocks junk or malformed data from being saved |
+
+> ⚠️ **Never use `allow read, write: if true`** — that makes your entire database public and writable by anyone on the internet.
+
+> 💡 **Test before going live:** Firebase Console → Firestore → Rules → **Rules Playground** — simulate a read/write and see if it passes or gets blocked.
 
 ### 3. ImgBB setup
 1. Go to [api.imgbb.com](https://api.imgbb.com/) and sign up free
@@ -150,6 +189,7 @@ Here is exactly what to pick for each variable:
 
 | Variable Name | Type | Where to find it |
 |---|---|---|
+| `NODE_VERSION` | **Plaintext** | Just type `20` — tells Cloudflare which Node.js to use |
 | `PUBLIC_FIREBASE_API_KEY` | **Plaintext** | Firebase Console → Project Settings → Your Apps |
 | `PUBLIC_FIREBASE_AUTH_DOMAIN` | **Plaintext** | Same as above |
 | `PUBLIC_FIREBASE_PROJECT_ID` | **Plaintext** | Same as above |
