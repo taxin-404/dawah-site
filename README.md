@@ -103,9 +103,27 @@ npm run deploy
 ```
 
 Or connect your **GitHub repo** to Cloudflare Pages for auto-deploy on every push:
-- Cloudflare Dashboard → Pages → Create a project → Connect to Git
-- Build command: `npm run build`
-- Build output directory: `dist`
+
+1. Cloudflare Dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**
+2. Select your GitHub/GitLab repo → click **Begin setup**
+3. On the build settings screen, fill in exactly:
+
+| Setting | Value |
+|---|---|
+| **Framework preset** | `Astro` ← pick from dropdown, do not leave as "None" |
+| **Build command** | `npm run build` |
+| **Build output directory** | `dist` |
+| **Root directory** | *(leave blank)* |
+
+4. Still on that same screen, scroll down to **Environment Variables (advanced)** and add:
+
+| Variable | Value | Type |
+|---|---|---|
+| `NODE_VERSION` | `20` | Plaintext |
+
+> This is how Cloudflare knows which Node.js version to use — there is no dropdown for it. If you skip this, Cloudflare may use an old Node version and the Astro build will fail.
+
+> ⚠️ If you accidentally leave Framework preset as **None**, Cloudflare won't know how to build Astro and the deployment will fail. Always select **Astro**.
 
 ---
 
